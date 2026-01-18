@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Recognition Attendance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+        video, img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Face Recognition Attendance</h2>
+    <video id="webcam" autoplay playsinline></video>
+    <button id="startCamera">Start</button>
+    <button id="capture" style="display:none;">Capture & Submit</button>
+    <button id="stopCamera" style="display:none;">Stop</button>
+    <p id="result"></p>
+</div>
+
+<script>
+    const webcam = document.getElementById('webcam');
+    const startBtn = document.getElementById('startCamera');
+    const stopBtn = document.getElementById('stopCamera');
+    const captureBtn = document.getElementById('capture');
+    const result = document.getElementById('result');
+    let stream;
+
+    startBtn.onclick = async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            webcam.srcObject = stream;
+            webcam.style.display = 'block';
+            startBtn.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'inline-block';
+        } catch (err) {
+            alert("Camera access denied.");
+        }
+    };
+
+    stopBtn.onclick = () => {
+        stream.getTracks().forEach(track => track.stop());
+        webcam.style.display = 'none';
+        startBtn.style.display = 'inline-block';
+        captureBtn.style.display = 'none';
+        stopBtn.style.display = 'none';
+        result.textContent = '';
+    };
+
+    captureBtn.onclick = () => {
+        result.textContent = 'Processing...';
+        const canvas = document.createElement('canvas');
+        canvas.width = webcam.videoWidth;
+        canvas.height = webcam.videoHeight;
+        canvas.getContext('2d').drawImage(webcam, 0, 0);
+
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append('image', blob, 'capture.jpg');
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'Face matched') {
+                    result.textContent = '✅ Welcome ' + data.name;
+                } else {
+                    result.textContent = '❌ ' + data.status;
+                }
+            })
+            .catch(() => {
+                result.textContent = '❌ Upload failed';
+            });
+        }, 'image/jpeg');
+    };
+</script>
+</body>
+</html>
