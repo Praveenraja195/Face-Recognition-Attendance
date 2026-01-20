@@ -7,6 +7,7 @@ A simple **Face Recognition-based Attendance System** built using Python, Flask,
 - Matches faces with known images stored in the system
 - Automatically records attendance with timestamp in a CSV file
 - Easy to add new users by uploading their images
+python app.
 
 ## Technologies Used
 - **Python** – Backend logic and face recognition
